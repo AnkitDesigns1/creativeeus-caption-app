@@ -589,21 +589,12 @@ def main() -> None:
 
             st.markdown('<div class="section-anchor-title">Exports</div>', unsafe_allow_html=True)
             st.markdown("### Final Video Export")
-            if st.button("Render Final Video"):
-                try:
-                    work_dir = ensure_work_dir()
-                    ass_path = os.path.join(work_dir, f"{st.session_state.base_name}_hinglish.ass")
-                    output_path = os.path.join(work_dir, f"{st.session_state.base_name}_hinglish_final.mp4")
-                    with open(ass_path, "w", encoding="utf-8") as f:
-                        f.write(st.session_state.ass_text)
-                    with st.spinner("Rendering final video..."):
-                        render_final_video(st.session_state.video_path, ass_path, output_path)
-                    with open(output_path, "rb") as f:
-                        video_bytes = f.read()
-                    st.success("Final video rendered successfully.")
-                    st.download_button(label="Download Final Captioned Video", data=video_bytes, file_name=f"{st.session_state.base_name}_hinglish_final.mp4", mime="video/mp4")
-                except Exception as exc:
-                    st.error(str(exc))
+          
+                      
+                   
+                        st.markdown('<div class="section-anchor-title">Exports</div>', unsafe_allow_html=True)
+st.markdown("### Final Video Export")
+st.warning("⚠️ Video export is only available on local machine, not on the public cloud version.")
 
     st.markdown('<div id="about"></div><div class="section-anchor-title" style="text-align:center;">About</div><div class="footer-note">Creativeeus • Premium green creator interface inspired by editorial product landing pages</div>', unsafe_allow_html=True)
 
