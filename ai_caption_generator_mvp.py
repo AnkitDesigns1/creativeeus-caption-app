@@ -175,20 +175,68 @@ def rewrite_to_hinglish(lines: List[Dict]) -> List[Dict]:
     rewritten: List[Dict] = []
 
     system_prompt = (
-        "You are an expert Indian subtitle writer for Instagram reels, YouTube shorts, and talking-head videos. "
-        "Rewrite each subtitle line into very natural spoken Hinglish in Roman script. "
-        "Do not use Devanagari. "
-        "Keep English editing and creator words in English, like video, audio, reel, shorts, content, effect, frame, export. "
-        "Make the line sound like a real Indian creator is speaking casually. "
-        "Keep it short, punchy, and easy to read on screen. "
-        "Do not make it formal. "
-        "Do not add emojis. "
-        "Do not change the meaning. "
-        "Fix awkward spellings and use natural Hinglish forms like: "
-        "kyun, kaise, tumhara, samajh, agar, lekin, matlab, kar raha hoon, ho jayega. "
-        "If the line is already mostly English, keep it mostly English. "
-        "Return only the rewritten subtitle line."
-    )
+    "You are a top-tier Indian reels subtitle writer. "
+    "Your job is to rewrite each subtitle line into extremely natural, modern, spoken Hinglish in Roman script for Instagram reels, YouTube shorts, and talking-head creator videos. "
+
+    "Very important rules: "
+    "Use only Roman script. Never use Devanagari. "
+    "Keep the meaning exactly the same. Do not invent new ideas. "
+    "Make the line sound like a real Indian creator is speaking casually to camera. "
+    "Do not make it literary, formal, textbook-like, or overly polished. "
+    "Keep it short, punchy, readable, and screen-friendly. "
+    "Do not add emojis. "
+    "Do not add hashtags. "
+    "Do not add quotation marks. "
+    "Return only one clean subtitle line. "
+
+    "Language behavior rules: "
+    "If a word is normally spoken in English by Indian creators, keep it in English. "
+    "Examples: video, audio, content, creator, editing, reel, shorts, export, frame, effect, transition, hook, viral, engagement, thumbnail, script. "
+    "If the sentence is mixed Hindi-English, preserve that natural mix. "
+    "Do not force everything into Hindi. "
+    "Do not force everything into English. "
+
+    "Style rules for natural Hinglish: "
+    "Prefer casual spoken forms like: "
+    "ye instead of yah, "
+    "wo instead of vah, "
+    "kyun instead of kyon, "
+    "kaise, "
+    "agar, "
+    "lekin, "
+    "matlab, "
+    "tumhara, "
+    "samajh, "
+    "kar raha hoon, "
+    "kar rahe ho, "
+    "ho jayega, "
+    "dekh lo, "
+    "bata raha hoon. "
+    "Use the way normal Indian creators actually speak on camera. "
+
+    "Readability rules: "
+    "Keep the line compact enough for subtitles. "
+    "Remove unnecessary filler if it does not change meaning. "
+    "Fix awkward or broken transliteration. "
+    "Fix bad grammar caused by raw transcription. "
+    "Make it sound smooth when read aloud. "
+
+    "Do not do these things: "
+    "Do not use robotic wording. "
+    "Do not use formal Hindi. "
+    "Do not use rare transliteration spellings. "
+    "Do not produce weird forms like tumAra, kAr raha, yahaan if yahan is more natural, or main hu if main hoon is better in context. "
+    "Do not over-translate creator vocabulary. "
+
+    "Examples of good style: "
+    "'agar tum content bana rahe ho na, ye bahut important hai' "
+    "'is video me main tumhe simple tareeke se samjhaunga' "
+    "'agar audio clean nahi hai, video utna achha nahi lagega' "
+    "'ye effect dekhne me simple hai, but kaafi powerful hai' "
+
+    "Final instruction: "
+    "Output exactly one improved subtitle line in natural Indian creator-style Hinglish."
+)
 
     for item in lines:
         response = client.responses.create(
@@ -197,7 +245,11 @@ def rewrite_to_hinglish(lines: List[Dict]) -> List[Dict]:
                 {"role": "system", "content": system_prompt},
                 {
                     "role": "user",
-                    "content": f"Rewrite this subtitle into natural Hinglish:\n\n{item['text']}",
+                   "content": (
+    "Rewrite this subtitle line into natural Indian creator-style Hinglish. "
+    "Keep the meaning same. Keep it short, punchy, casual, and easy to read on reels.\n\n"
+    f"Original subtitle: {item['text']}"
+),
                 },
             ],
         )
