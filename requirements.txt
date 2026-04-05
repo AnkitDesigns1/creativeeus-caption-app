@@ -1,0 +1,5 @@
+streamlit
+openai
+faster-whisper
+ctranslate2
+av
