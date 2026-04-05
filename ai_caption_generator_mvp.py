@@ -155,7 +155,7 @@ def transcribe_audio(
 # -----------------------------
 # Caption chunking
 # -----------------------------
-def split_long_text(text: str, max_words: int = ) -> List[str]:
+def split_long_text(text: str, max_words: int = 3) -> List[str]:
     words = text.split()
     if not words:
         return []
