@@ -592,7 +592,7 @@ def main() -> None:
           
                       
                    
-                        st.markdown('<div class="section-anchor-title">Exports</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-anchor-title">Exports</div>', unsafe_allow_html=True)
 st.markdown("### Final Video Export")
 st.warning("⚠️ Video export is only available on local machine, not on the public cloud version.")
 
