@@ -8,7 +8,6 @@ from typing import List, Dict, Optional
 import streamlit as st
 from openai import OpenAI
 
-
 APP_TITLE = "Creativeeus"
 
 
@@ -16,11 +15,17 @@ APP_TITLE = "Creativeeus"
 # OpenAI
 # -----------------------------
 def get_openai_client() -> OpenAI:
-    api_key = os.getenv("OPENAI_API_KEY", "").strip()
+    api_key = ""
+    try:
+        api_key = st.secrets["OPENAI_API_KEY"]
+    except Exception:
+        api_key = os.getenv("OPENAI_API_KEY", "").strip()
+
     if not api_key:
         raise RuntimeError(
-            "OPENAI_API_KEY not found. Add your API key in Windows Environment Variables, then reopen Command Prompt."
+            "OPENAI_API_KEY not found. Add it in Streamlit secrets or environment variables."
         )
+
     return OpenAI(api_key=api_key)
 
 
@@ -78,33 +83,6 @@ def run_ffmpeg_extract_audio(video_path: str, audio_path: str) -> None:
     result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     if result.returncode != 0:
         raise RuntimeError(f"FFmpeg audio extraction failed:\n{result.stderr}")
-
-
-def render_final_video(video_path: str, ass_path: str, output_path: str) -> None:
-    ass_filename = os.path.basename(ass_path)
-    ass_folder = os.path.dirname(ass_path)
-
-    cmd = [
-        "ffmpeg",
-        "-y",
-        "-i",
-        video_path,
-        "-vf",
-        f"ass={ass_filename}",
-        "-c:a",
-        "copy",
-        output_path,
-    ]
-
-    result = subprocess.run(
-        cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        cwd=ass_folder,
-    )
-    if result.returncode != 0:
-        raise RuntimeError(f"FFmpeg video render failed:\n{result.stderr}")
 
 
 # -----------------------------
@@ -197,20 +175,20 @@ def rewrite_to_hinglish(lines: List[Dict]) -> List[Dict]:
     rewritten: List[Dict] = []
 
     system_prompt = (
-    "You are an expert Indian subtitle writer for Instagram reels, YouTube shorts, and talking-head videos. "
-    "Rewrite each subtitle line into very natural spoken Hinglish in Roman script. "
-    "Do not use Devanagari. "
-    "Keep English editing and creator words in English, like video, audio, reel, shorts, content, effect, frame, export. "
-    "Make the line sound like a real Indian creator is speaking casually. "
-    "Keep it short, punchy, and easy to read on screen. "
-    "Do not make it formal. "
-    "Do not add emojis. "
-    "Do not change the meaning. "
-    "Fix awkward spellings and use natural Hinglish forms like: "
-    "kyun, kaise, tumhara, samajh, agar, lekin, matlab, kar raha hoon, ho jayega. "
-    "If the line is already mostly English, keep it mostly English. "
-    "Return only the rewritten subtitle line."
-)
+        "You are an expert Indian subtitle writer for Instagram reels, YouTube shorts, and talking-head videos. "
+        "Rewrite each subtitle line into very natural spoken Hinglish in Roman script. "
+        "Do not use Devanagari. "
+        "Keep English editing and creator words in English, like video, audio, reel, shorts, content, effect, frame, export. "
+        "Make the line sound like a real Indian creator is speaking casually. "
+        "Keep it short, punchy, and easy to read on screen. "
+        "Do not make it formal. "
+        "Do not add emojis. "
+        "Do not change the meaning. "
+        "Fix awkward spellings and use natural Hinglish forms like: "
+        "kyun, kaise, tumhara, samajh, agar, lekin, matlab, kar raha hoon, ho jayega. "
+        "If the line is already mostly English, keep it mostly English. "
+        "Return only the rewritten subtitle line."
+    )
 
     for item in lines:
         response = client.responses.create(
@@ -223,6 +201,7 @@ def rewrite_to_hinglish(lines: List[Dict]) -> List[Dict]:
                 },
             ],
         )
+
         text = (response.output_text or "").strip()
         if not text:
             text = item["text"]
@@ -376,8 +355,8 @@ def main() -> None:
         .section-heading { font-size: 2rem; font-weight: 800; color: #1f2a23; margin-bottom: 8px; }
         .section-sub { color: #6c746f; line-height: 1.7; max-width: 620px; margin-bottom: 20px; }
         .soft-card { background: #ffffff; border-radius: 22px; padding: 18px; border: 1px solid #e9e7e0; box-shadow: 0 8px 24px rgba(0,0,0,0.03); }
-        .metric-grid, .feature-icon-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 10px; margin-bottom: 20px; }
-        .feature-icon-grid { grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 18px; margin-bottom: 14px; }
+        .metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 10px; margin-bottom: 20px; }
+        .feature-icon-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 18px; margin-bottom: 14px; }
         .metric-card, .feature-icon-card { background: #ffffff; border: 1px solid #e8e6df; border-radius: 18px; padding: 18px; }
         .feature-icon-card { min-height: 120px; }
         .metric-title, .feature-icon-title { font-size: 1.1rem; font-weight: 800; color: #223128; margin-bottom: 6px; }
@@ -386,35 +365,19 @@ def main() -> None:
         .preview-line { background: #ffffff; border: 1px solid #ebe8e2; border-radius: 16px; padding: 14px 16px; margin-bottom: 10px; }
         .time-tag { color: #6d746f; font-size: 0.84rem; font-weight: 700; margin-bottom: 4px; }
         .caption-text { color: #19241d; font-size: 1.08rem; font-weight: 800; line-height: 1.5; }
-        .slider-card {
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 18px;
-            padding: 14px 14px 6px 14px;
-            margin-top: 8px;
-            margin-bottom: 12px;
-        }
-        .slider-card-title {
-            font-size: 0.82rem;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            font-weight: 800;
-            color: #f2f4ef;
-            margin-bottom: 4px;
-        }
-        .slider-card-sub {
-            font-size: 0.84rem;
-            color: rgba(255,255,255,0.72);
-            margin-bottom: 2px;
-            line-height: 1.5;
-        }
         .section-anchor-title { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.12em; color: #7d847f; margin-bottom: 6px; font-weight: 700; }
+        .slider-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; padding: 14px 14px 6px 14px; margin-top: 8px; margin-bottom: 12px; }
+        .slider-card-title { font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 800; color: #f2f4ef; margin-bottom: 4px; }
+        .slider-card-sub { font-size: 0.84rem; color: rgba(255,255,255,0.72); margin-bottom: 2px; line-height: 1.5; }
         .stButton > button { background: #2f5a46; color: white; border-radius: 999px; border: none; padding: 0.75rem 1.2rem; font-weight: 800; }
         .stDownloadButton > button { background: #ffffff; color: #294b3b; border-radius: 999px; border: 1px solid #d8d5cc; padding: 0.75rem 1.2rem; font-weight: 800; }
         .stTabs [data-baseweb="tab-list"] { gap: 8px; }
         .stTabs [data-baseweb="tab"] { background: #ffffff; border: 1px solid #e7e4db; border-radius: 12px; padding: 10px 16px; }
         .footer-note { color: #6f7570; text-align: center; margin-top: 32px; font-size: 0.92rem; }
-        @media (max-width: 900px) { .hero-grid, .metric-grid, .hero-mini-grid, .feature-icon-grid { grid-template-columns: 1fr; } .hero-title { font-size: 2.3rem; } }
+        @media (max-width: 900px) {
+            .hero-grid, .metric-grid, .hero-mini-grid, .feature-icon-grid { grid-template-columns: 1fr; }
+            .hero-title { font-size: 2.3rem; }
+        }
         </style>
         """,
         unsafe_allow_html=True,
@@ -437,7 +400,7 @@ def main() -> None:
             <div class="hero-grid">
                 <div>
                     <div class="hero-title">Reels Caption Studio For Modern Creators</div>
-                    <div class="hero-sub">Generate accurate Hinglish captions, preview clean lines, and export final videos from one stylish workspace built for short-form creators.</div>
+                    <div class="hero-sub">Generate accurate Hinglish captions, preview clean lines, and export subtitle files from one stylish workspace built for short-form creators.</div>
                     <div class="hero-btn-row">
                         <span class="hero-pill-primary">Generate Captions</span>
                         <span class="hero-pill-secondary">Explore Workflow</span>
@@ -452,8 +415,8 @@ def main() -> None:
                             <div class="hero-mini-sub">Highlight Punch, Bold Reels, Glow Pop, Clean Studio</div>
                         </div>
                         <div class="hero-mini-box">
-                            <div class="hero-mini-title">Direct Export</div>
-                            <div class="hero-mini-sub">Render final video inside Creativeeus</div>
+                            <div class="hero-mini-title">Cloud Ready</div>
+                            <div class="hero-mini-sub">Public app for captions and subtitle downloads</div>
                         </div>
                     </div>
                 </div>
@@ -477,9 +440,13 @@ def main() -> None:
         st.session_state.ass_text = ""
 
     with st.sidebar:
-        st.markdown('<div style="font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; color:rgba(255,255,255,0.7); margin-bottom:6px;">Exclusively for Ankit and Yash</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div style="font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; color:rgba(255,255,255,0.7); margin-bottom:6px;">Exclusively for Ankit and Yash</div>',
+            unsafe_allow_html=True,
+        )
         st.markdown("## Creativeeus")
         st.caption("Creator control panel")
+
         st.markdown("### Transcription")
         model_size = st.selectbox("Whisper model", ["tiny", "base", "small", "medium"], index=3)
         source_language = st.selectbox("Source language", ["auto", "hi", "en"], index=0)
@@ -487,30 +454,54 @@ def main() -> None:
 
         st.markdown("### Caption Style")
 
-        st.markdown('<div class="slider-card"><div class="slider-card-title">Max words per caption</div><div class="slider-card-sub">Use lower values for faster, punchier reels subtitles.</div></div>', unsafe_allow_html=True)
-        max_words = st.slider("Max words per caption", 3, 10, 6, label_visibility="collapsed")
+        st.markdown(
+            '<div class="slider-card"><div class="slider-card-title">Max words per caption</div><div class="slider-card-sub">Use lower values for faster, punchier reels subtitles.</div></div>',
+            unsafe_allow_html=True,
+        )
+        max_words = st.slider("Max words per caption", 3, 10, 3, label_visibility="collapsed")
 
-        st.markdown('<div class="slider-card"><div class="slider-card-title">Font size</div><div class="slider-card-sub">Increase this for bold mobile-first subtitle styling.</div></div>', unsafe_allow_html=True)
-        font_size = st.slider("Font size", 28, 96, 58, label_visibility="collapsed")
+        st.markdown(
+            '<div class="slider-card"><div class="slider-card-title">Font size</div><div class="slider-card-sub">Increase this for bold mobile-first subtitle styling.</div></div>',
+            unsafe_allow_html=True,
+        )
+        font_size = st.slider("Font size", 28, 96, 65, label_visibility="collapsed")
 
-        st.markdown('<div class="slider-card"><div class="slider-card-title">Bottom margin</div><div class="slider-card-sub">Move captions higher or lower on the video frame.</div></div>', unsafe_allow_html=True)
-        y_margin = st.slider("Bottom margin", 20, 220, 70, label_visibility="collapsed")
+        st.markdown(
+            '<div class="slider-card"><div class="slider-card-title">Bottom margin</div><div class="slider-card-sub">Move captions higher or lower on the video frame.</div></div>',
+            unsafe_allow_html=True,
+        )
+        y_margin = st.slider("Bottom margin", 20, 220, 110, label_visibility="collapsed")
 
-        st.markdown('<div class="slider-card"><div class="slider-card-title">Animation style</div><div class="slider-card-sub">Choose the subtitle motion style for the final render.</div></div>', unsafe_allow_html=True)
-        animation_style = st.selectbox("Animation style", ["Highlight Punch", "Bold Reels", "Glow Pop", "Clean Studio"], index=0, label_visibility="collapsed")
+        st.markdown(
+            '<div class="slider-card"><div class="slider-card-title">Animation style</div><div class="slider-card-sub">Choose the subtitle motion style for the final render.</div></div>',
+            unsafe_allow_html=True,
+        )
+        animation_style = st.selectbox(
+            "Animation style",
+            ["Highlight Punch", "Bold Reels", "Glow Pop", "Clean Studio"],
+            index=0,
+            label_visibility="collapsed",
+        )
 
         st.markdown("### Creativeeus Use Cases")
         st.caption("Reels • YouTube Shorts • Talking Head Videos • Tutorial Edits")
 
     st.markdown('<div id="studio"></div><div class="section-shell">', unsafe_allow_html=True)
-    st.markdown('<div class="section-anchor-title">Studio</div><div class="section-heading">Crafted for excellent video captions.</div>', unsafe_allow_html=True)
-    st.markdown('<div class="section-sub">Upload your clip, generate more natural Hinglish captions, preview subtitle lines, and export your finished video from a cleaner brand-ready interface.</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-anchor-title">Studio</div><div class="section-heading">Crafted for excellent video captions.</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        '<div class="section-sub">Upload your clip, generate more natural Hinglish captions, preview subtitle lines, and download subtitle files from a cleaner brand-ready interface.</div>',
+        unsafe_allow_html=True,
+    )
+
     st.markdown(
         """
         <div class="metric-grid">
-            <div class="metric-card"><div class="metric-title">Fast Workflow</div><div class="metric-text">Upload, caption, preview, and export in one place without switching tools.</div></div>
+            <div class="metric-card"><div class="metric-title">Fast Workflow</div><div class="metric-text">Upload, caption, preview, and download in one place without switching tools.</div></div>
             <div class="metric-card"><div class="metric-title">Reels Ready</div><div class="metric-text">Short readable lines designed for creator content and modern vertical video edits.</div></div>
-            <div class="metric-card"><div class="metric-title">Direct Export</div><div class="metric-text">Render your final captioned video from the same workspace after reviewing the text.</div></div>
+            <div class="metric-card"><div class="metric-title">Cloud Access</div><div class="metric-text">Use the app publicly on other devices with live subtitle generation.</div></div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -521,13 +512,14 @@ def main() -> None:
     if uploaded is not None:
         st.video(uploaded)
     st.markdown('</div>', unsafe_allow_html=True)
+
     st.markdown(
         """
         <div class="feature-icon-grid">
             <div class="feature-icon-card"><div class="feature-icon">🎬</div><div class="feature-icon-title">Reels First</div><div class="feature-icon-sub">Built around short-form creator workflows and quick caption turnaround.</div></div>
             <div class="feature-icon-card"><div class="feature-icon">📝</div><div class="feature-icon-title">Natural Hinglish</div><div class="feature-icon-sub">Cleaner Roman Hindi captions with better readability for Indian audiences.</div></div>
             <div class="feature-icon-card"><div class="feature-icon">✨</div><div class="feature-icon-title">Animated Styles</div><div class="feature-icon-sub">Choose highlight punch, bold reels, glow pop, or clean studio motion.</div></div>
-            <div class="feature-icon-card"><div class="feature-icon">⬇️</div><div class="feature-icon-title">Direct Export</div><div class="feature-icon-sub">Render your final captioned video from the same dashboard without extra steps.</div></div>
+            <div class="feature-icon-card"><div class="feature-icon">⬇️</div><div class="feature-icon-title">Subtitle Downloads</div><div class="feature-icon-sub">Download SRT and ASS files for your local edit and export workflow.</div></div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -548,7 +540,12 @@ def main() -> None:
                 run_ffmpeg_extract_audio(video_path, audio_path)
 
             with st.spinner("Transcribing speech..."):
-                segments = transcribe_audio(audio_path=audio_path, model_size=model_size, source_language=source_language, vad_filter=vad_filter)
+                segments = transcribe_audio(
+                    audio_path=audio_path,
+                    model_size=model_size,
+                    source_language=source_language,
+                    vad_filter=vad_filter,
+                )
 
             with st.spinner("Splitting captions..."):
                 lines = split_segments_for_captions(segments, max_words=max_words)
@@ -566,37 +563,57 @@ def main() -> None:
             st.session_state.lines = lines
             st.session_state.srt_text = srt_text
             st.session_state.ass_text = ass_text
+
             st.success("Creativeeus captions generated successfully.")
         except Exception as exc:
             st.error(str(exc))
 
     if st.session_state.generated:
-        st.markdown('<div id="captions"></div><div class="section-anchor-title">Captions</div><div class="section-heading" style="margin-top:24px;">Why creators choose Creativeeus</div>', unsafe_allow_html=True)
-        st.markdown('<div class="section-sub">Review subtitle lines in a cleaner layout, download subtitle files, and render final videos from the same creator dashboard.</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div id="captions"></div><div class="section-anchor-title">Captions</div><div class="section-heading" style="margin-top:24px;">Why creators choose Creativeeus</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            '<div class="section-sub">Review subtitle lines in a cleaner layout and download subtitle files from the same creator dashboard.</div>',
+            unsafe_allow_html=True,
+        )
+
         preview_tab, export_tab = st.tabs(["Preview", "Exports"])
 
         with preview_tab:
             for item in st.session_state.lines[:30]:
-                st.markdown(f'''<div class="preview-line"><div class="time-tag">{format_srt_time(item['start'])} → {format_srt_time(item['end'])}</div><div class="caption-text">{item['text']}</div></div>''', unsafe_allow_html=True)
+                st.markdown(
+                    f'<div class="preview-line"><div class="time-tag">{format_srt_time(item["start"])} → {format_srt_time(item["end"])}</div><div class="caption-text">{item["text"]}</div></div>',
+                    unsafe_allow_html=True,
+                )
 
         with export_tab:
             st.markdown('<div id="exports"></div>', unsafe_allow_html=True)
+
             c1, c2 = st.columns(2)
             with c1:
-                st.download_button(label="Download SRT", data=st.session_state.srt_text, file_name=f"{st.session_state.base_name}_hinglish.srt", mime="application/x-subrip")
+                st.download_button(
+                    label="Download SRT",
+                    data=st.session_state.srt_text,
+                    file_name=f"{st.session_state.base_name}_hinglish.srt",
+                    mime="application/x-subrip",
+                )
             with c2:
-                st.download_button(label="Download ASS", data=st.session_state.ass_text, file_name=f"{st.session_state.base_name}_hinglish.ass", mime="text/plain")
+                st.download_button(
+                    label="Download ASS",
+                    data=st.session_state.ass_text,
+                    file_name=f"{st.session_state.base_name}_hinglish.ass",
+                    mime="text/plain",
+                )
 
             st.markdown('<div class="section-anchor-title">Exports</div>', unsafe_allow_html=True)
             st.markdown("### Final Video Export")
-          
-                      
-                   
-st.markdown('<div class="section-anchor-title">Exports</div>', unsafe_allow_html=True)
-st.markdown("### Final Video Export")
-st.warning("⚠️ Video export is only available on local machine, not on the public cloud version.")
+            st.warning("⚠️ Video export is only available on local machine, not on the public cloud version.")
 
-    st.markdown('<div id="about"></div><div class="section-anchor-title" style="text-align:center;">About</div><div class="footer-note">Creativeeus • Premium green creator interface inspired by editorial product landing pages</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div id="about"></div><div class="section-anchor-title" style="text-align:center;">About</div><div class="footer-note">Creativeeus • Premium green creator interface inspired by editorial product landing pages</div>',
+        unsafe_allow_html=True,
+    )
 
 
 if __name__ == "__main__":
