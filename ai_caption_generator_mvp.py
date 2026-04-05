@@ -155,7 +155,7 @@ def transcribe_audio(
 # -----------------------------
 # Caption chunking
 # -----------------------------
-def split_long_text(text: str, max_words: int = 6) -> List[str]:
+def split_long_text(text: str, max_words: int = ) -> List[str]:
     words = text.split()
     if not words:
         return []
@@ -172,7 +172,7 @@ def split_long_text(text: str, max_words: int = 6) -> List[str]:
     return chunks
 
 
-def split_segments_for_captions(segments: List[Dict], max_words: int = 6) -> List[Dict]:
+def split_segments_for_captions(segments: List[Dict], max_words: int = 3) -> List[Dict]:
     out: List[Dict] = []
     for seg in segments:
         parts = split_long_text(seg["text"], max_words=max_words)
@@ -197,12 +197,20 @@ def rewrite_to_hinglish(lines: List[Dict]) -> List[Dict]:
     rewritten: List[Dict] = []
 
     system_prompt = (
-        "You rewrite subtitle lines into natural Hinglish for Indian creator videos. "
-        "Use Roman Hindi only, not Devanagari. Keep English creator/editing words in English. "
-        "Make lines short, readable, and natural for reels and shorts. Do not add emojis. "
-        "Do not change meaning. Use common Hinglish spellings like kyun, kaise, tumhara, samajh, bata raha hoon. "
-        "Return only the rewritten subtitle line."
-    )
+    "You are an expert Indian subtitle writer for Instagram reels, YouTube shorts, and talking-head videos. "
+    "Rewrite each subtitle line into very natural spoken Hinglish in Roman script. "
+    "Do not use Devanagari. "
+    "Keep English editing and creator words in English, like video, audio, reel, shorts, content, effect, frame, export. "
+    "Make the line sound like a real Indian creator is speaking casually. "
+    "Keep it short, punchy, and easy to read on screen. "
+    "Do not make it formal. "
+    "Do not add emojis. "
+    "Do not change the meaning. "
+    "Fix awkward spellings and use natural Hinglish forms like: "
+    "kyun, kaise, tumhara, samajh, agar, lekin, matlab, kar raha hoon, ho jayega. "
+    "If the line is already mostly English, keep it mostly English. "
+    "Return only the rewritten subtitle line."
+)
 
     for item in lines:
         response = client.responses.create(
@@ -473,7 +481,7 @@ def main() -> None:
         st.markdown("## Creativeeus")
         st.caption("Creator control panel")
         st.markdown("### Transcription")
-        model_size = st.selectbox("Whisper model", ["tiny", "base", "small", "medium"], index=2)
+        model_size = st.selectbox("Whisper model", ["tiny", "base", "small", "medium"], index=3)
         source_language = st.selectbox("Source language", ["auto", "hi", "en"], index=0)
         vad_filter = st.checkbox("Use VAD filter", value=True)
 
